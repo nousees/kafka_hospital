@@ -1,0 +1,95 @@
+services:
+  api-service:
+    build:
+      context: ./api_service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: on-failure
+    environment:
+      KAFKA_BROKER: "kafka:9092"
+
+  data-service:
+    build:
+      context: ./data_service
+      dockerfile: Dockerfile
+    networks:
+      - app-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: on-failure
+    environment:
+      KAFKA_BROKER: "kafka:9092"
+      DB_HOST: "${DB_HOST}"
+      DB_PORT: "${DB_PORT}"
+      DB_USER: "${POSTGRES_USER}"
+      DB_PASSWORD: "${POSTGRES_PASSWORD}"
+      DB_NAME: "${POSTGRES_DB}"
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "srvr,ruok,stat" 
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "echo srvr | nc localhost 2181 | grep Mode"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    ports:
+      - "9092:9092"
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db-data:
