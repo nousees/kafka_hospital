@@ -3,6 +3,7 @@ package kafka
 import (
 	"api_service/internal/entities"
 	"encoding/json"
+	"strconv"
 
 	"github.com/IBM/sarama"
 	"github.com/sirupsen/logrus"
@@ -36,6 +37,7 @@ func (p *KafkaProducer) SendAppointment(appt entities.Appointment) error {
 
 	msg := &sarama.ProducerMessage{
 		Topic: "appointments",
+		Key:   sarama.StringEncoder(strconv.Itoa(appt.PatientID)),
 		Value: sarama.StringEncoder(apptBytes),
 	}
 
@@ -58,6 +60,7 @@ func (p *KafkaProducer) SendPatient(patient entities.Patient) error {
 
 	msg := &sarama.ProducerMessage{
 		Topic: "patients",
+		Key:   sarama.StringEncoder(patient.Name),
 		Value: sarama.StringEncoder(patientBytes),
 	}
 
@@ -80,6 +83,7 @@ func (p *KafkaProducer) SendDoctor(doctor entities.Doctor) error {
 
 	msg := &sarama.ProducerMessage{
 		Topic: "doctors",
+		Key:   sarama.StringEncoder(doctor.Name),
 		Value: sarama.StringEncoder(doctorBytes),
 	}
 
