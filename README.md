@@ -35,13 +35,8 @@ API доступно на порту `8080`. Запросы приведены �
 
 #### Создать пациента
 
-- **Метод**: POST
-- **URL**: `http://localhost:8080/patients`
-- **Тело (Body, raw, JSON)**:
-  ```json
-  {
-    "name": "Иванов Иван Иванович"
-  }
+  ```bash
+  curl -X POST http://localhost:8080/patients -H "Content-Type: application/json" -d '{"name": "Иванов Иван Иванович"}'
   ```
 - **Ожидаемый ответ**:
   ```json
@@ -50,13 +45,8 @@ API доступно на порту `8080`. Запросы приведены �
 
 #### Создать врача
 
-- **Метод**: POST
-- **URL**: `http://localhost:8080/doctors`
-- **Тело (Body, raw, JSON)**:
-  ```json
-  {
-    "name": "Доктор Докторов"
-  }
+  ```bash
+  curl -X POST http://localhost:8080/doctors -H "Content-Type: application/json" -d '{"name": "Доктор Докторов"}'
   ```
 - **Ожидаемый ответ**:
   ```json
@@ -65,15 +55,8 @@ API доступно на порту `8080`. Запросы приведены �
 
 #### Создать запись
 
-- **Метод**: POST
-- **URL**: `http://localhost:8080/appointment`
-- **Тело (Body, raw, JSON)**:
-  ```json
-  {
-    "patient_id": 1,
-    "doctor_id": 1,
-    "appointment_date": "2025-05-10"
-  }
+  ```bash
+  curl -X POST http://localhost:8080/appointment -H "Content-Type: application/json" -d '{"patient_id": 1, "doctor_id": 1, "appointment_date": "2025-05-10"}'
   ```
 - **Ожидаемый ответ**:
   ```json
@@ -82,8 +65,10 @@ API доступно на порту `8080`. Запросы приведены �
 
 #### Поиск записей
 
-- **Метод**: GET
-- **URL**: `http://localhost:8080/search`
+  ```bash
+  curl http://localhost:8080/search
+  ```
+
 - **Ожидаемый ответ**:
   ```json
   [
@@ -102,8 +87,10 @@ API доступно на порту `8080`. Запросы приведены �
 
 #### Отчет: Топ врачей
 
-- **Метод**: GET
-- **URL**: `http://localhost:8080/reports/top-doctors`
+  ```bash
+  curl http://localhost:8080/reports/top-doctors
+  ```
+  
 - **Ожидаемый ответ**:
   ```json
   [
@@ -120,8 +107,11 @@ API доступно на порту `8080`. Запросы приведены �
 
 #### Отчет: Топ пациентов
 
-- **Метод**: GET
-- **URL**: `http://localhost:8080/reports/top-patients`
+
+  ```bash
+  curl http://localhost:8080/reports/top-patients
+  ```
+
 - **Ожидаемый ответ**:
   ```json
   [
@@ -138,8 +128,9 @@ API доступно на порту `8080`. Запросы приведены �
 
 #### Отчет: Количество записей на день
 
-- **Метод**: GET
-- **URL**: `http://localhost:8080/reports/daily-counts`
+  ```bash
+  curl http://localhost:8080/reports/daily-counts
+  ```
 - **Ожидаемый ответ**:
   ```json
   [

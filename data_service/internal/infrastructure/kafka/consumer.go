@@ -23,10 +23,28 @@ func NewKafkaConsumer(broker string) (sarama.Consumer, error) {
 	return consumer, nil
 }
 
-func ConsumeAppointments(consumer sarama.Consumer, repo interfaces.AppointmentRepository) {
-	topics := []string{"appointments", "patients", "doctors"}
+func entityHandler[T any](save func(T) error) func([]byte) error {
+	return func(value []byte) error {
+		var entity T
+		if err := json.Unmarshal(value, &entity); err != nil {
+			return err
+		}
+		return save(entity)
+	}
+}
 
-	for _, topic := range topics {
+func createHandlers(repo interfaces.AppointmentRepository) map[string]func([]byte) error {
+	return map[string]func([]byte) error{
+		"appointments": entityHandler[entities.Appointment](repo.Save),
+		"patients":     entityHandler[entities.Patient](repo.SavePatient),
+		"doctors":      entityHandler[entities.Doctor](repo.SaveDoctor),
+	}
+}
+
+func ConsumeAppointments(consumer sarama.Consumer, repo interfaces.AppointmentRepository) {
+	handlers := createHandlers(repo)
+
+	for topic, handler := range handlers {
 		partitions, err := consumer.Partitions(topic)
 		if err != nil {
 			logrus.Errorf("Failed to get partitions for topic %s: %v", topic, err)
@@ -40,39 +58,13 @@ func ConsumeAppointments(consumer sarama.Consumer, repo interfaces.AppointmentRe
 				continue
 			}
 
-			go func(topic string, pc sarama.PartitionConsumer) {
+			go func(topic string, pc sarama.PartitionConsumer, handler func([]byte) error) {
 				for msg := range pc.Messages() {
-					switch topic {
-					case "appointments":
-						var appt entities.Appointment
-						if err := json.Unmarshal(msg.Value, &appt); err != nil {
-							logrus.Errorf("Failed to unmarshal appointment: %v", err)
-							continue
-						}
-						if err := repo.Save(appt); err != nil {
-							logrus.Errorf("Failed to save appointment: %v", err)
-						}
-					case "patients":
-						var patient entities.Patient
-						if err := json.Unmarshal(msg.Value, &patient); err != nil {
-							logrus.Errorf("Failed to unmarshal patient: %v", err)
-							continue
-						}
-						if err := repo.SavePatient(patient); err != nil {
-							logrus.Errorf("Failed to save patient: %v", err)
-						}
-					case "doctors":
-						var doctor entities.Doctor
-						if err := json.Unmarshal(msg.Value, &doctor); err != nil {
-							logrus.Errorf("Failed to unmarshal doctor: %v", err)
-							continue
-						}
-						if err := repo.SaveDoctor(doctor); err != nil {
-							logrus.Errorf("Failed to save doctor: %v", err)
-						}
+					if err := handler(msg.Value); err != nil {
+						logrus.Errorf("Error handling message from topic %s: %v", topic, err)
 					}
 				}
-			}(topic, pc)
+			}(topic, pc, handler)
 		}
 	}
 
