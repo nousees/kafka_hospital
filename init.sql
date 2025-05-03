@@ -12,7 +12,7 @@ CREATE TABLE appointments (
     id SERIAL PRIMARY KEY,
     patient_id INT NOT NULL,
     doctor_id INT NOT NULL,
-    appointment_date STRING NOT NULL,
+    appointment_date VARCHAR(15) NOT NULL,
     FOREIGN KEY (patient_id) REFERENCES patients(id),
     FOREIGN KEY (doctor_id) REFERENCES doctors(id)
 );

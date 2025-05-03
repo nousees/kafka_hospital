@@ -39,6 +39,7 @@ services:
       POSTGRES_DB: "${POSTGRES_DB}"
     volumes:
       - db-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - app-network
 
@@ -47,7 +48,6 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "srvr,ruok,stat"
     networks:
       - app-network
 
